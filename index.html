@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.167.0/build/three.module.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import * as THREE from "three";
+
+      // サイズを指定
+      const width = 960;
+      const height = 540;
+      let rot = 0;
+
+      // レンダラーを作成
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.querySelector("#myCanvas"),
+      });
+      renderer.setSize(width, height);
+
+      // シーンを作成
+      const scene = new THREE.Scene();
+
+      // カメラを作成 (近クリッピングと遠クリッピングを設定)
+      const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 5000);
+
+      // 平行光源を作成
+      const directionalLight = new THREE.DirectionalLight(0xffffff);
+      directionalLight.position.set(1, 1, 1);
+      scene.add(directionalLight);
+
+      // テクスチャを読み込む
+      const texture = new THREE.TextureLoader().load("imgs/earthmap1k.jpg");
+      texture.colorSpace = THREE.SRGBColorSpace;
+
+      // マテリアルを作成
+      const material = new THREE.MeshStandardMaterial({
+        map: texture,
+        side: THREE.DoubleSide,
+      });
+
+      // 球体の形状を作成
+      const geometry = new THREE.SphereGeometry(300, 30, 30);
+      // メッシュを作成
+      const earthMesh = new THREE.Mesh(geometry, material);
+      // シーンにメッシュを追加
+      scene.add(earthMesh);
+
+      // 星屑を作成
+      createStarField();
+
+      /** 星屑を作成します */
+      function createStarField() {
+        const vertices = [];
+        for (let i = 0; i < 1000; i++) {
+          const x = 3000 * (Math.random() - 0.5);
+          const y = 3000 * (Math.random() - 0.5);
+          const z = 3000 * (Math.random() - 0.5);
+          vertices.push(x, y, z);
+        }
+
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute(
+          "position",
+          new THREE.Float32BufferAttribute(vertices, 3)
+        );
+
+        const material = new THREE.PointsMaterial({
+          size: 10,
+          color: 0xffffff,
+        });
+
+        const mesh = new THREE.Points(geometry, material);
+        scene.add(mesh);
+      }
+
+      let mouseX = 0;
+
+      // マウス座標を取得
+      document.addEventListener("mousemove", (event) => {
+        mouseX = event.pageX;
+      });
+
+      // ウィンドウサイズ変更時の処理を追加
+      window.addEventListener("resize", onWindowResize);
+
+      function onWindowResize() {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+        renderer.setSize(width, height);
+      }
+
+      tick();
+
+      // 毎フレーム実行されるループ
+      function tick() {
+        const targetRot = (mouseX / window.innerWidth) * 360;
+        rot += (targetRot - rot) * 0.02;
+
+        const radian = (rot * Math.PI) / 180;
+        camera.position.x = 1000 * Math.sin(radian);
+        camera.position.z = 1000 * Math.cos(radian);
+
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        renderer.render(scene, camera);
+
+        requestAnimationFrame(tick);
+      }
+    </script>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+  </body>
+</html>
